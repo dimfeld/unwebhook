@@ -60,6 +60,12 @@ If not specified, requests are allowed from any IP address.
 AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
 ```
 
+#### Secret
+A string that must be passed in the request. Requests that don't have a matching
+secret will be ignored. Note that Gitlab does not support this feature.
+
+If specified, this overrides any server-wide secret. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
+
 #### LogFile
 The path to the log file. If not given, the default `webhook-shell.log` is used, written to the current directory.
 
@@ -99,6 +105,12 @@ An optional list of Hook objects. When given in the server configuration file, t
 #### PerCommit
 
 #### AllowEvent
+
+#### Secret
+A string that must be passed in the request. Requests that don't have a matching
+secret will be ignored. Note that Gitlab does not support this feature.
+
+If specified, this overrides any secret from the server-wide configuration. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
 #### Timeout
 
