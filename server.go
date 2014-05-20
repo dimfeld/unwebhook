@@ -10,7 +10,7 @@ import (
 type HookHandler func(http.ResponseWriter, *http.Request, map[string]string, *Hook)
 
 func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]string, hook *Hook) {
-	githubEventType := r.Header().Get("X-GitHub-Event")
+	githubEventType := r.Header.Get("X-GitHub-Event")
 
 	if r.ContentLength > 16384 {
 		// We should never get a request this large.

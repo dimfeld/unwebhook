@@ -2,9 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
-	"strconv"
-	"strings"
 )
 
 type Event map[string]interface{}
@@ -88,4 +85,5 @@ func NewEvent(jsonData []byte, eventName string) Event {
 	} else {
 		e["type"] = eventName
 	}
+	return e
 }

@@ -200,7 +200,7 @@ func main() {
 		err := h.CreateTemplates()
 		if err != nil {
 			logger.Printf("Failed parsing template %s: %s", h.Url, err)
-			failed := true
+			failed = true
 		}
 	}
 
