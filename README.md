@@ -61,8 +61,8 @@ AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
 ```
 
 #### Secret
-A string that must be passed in the request. Requests that don't have a matching
-secret will be ignored. Note that Gitlab does not support this feature.
+A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
+digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any server-wide secret. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
@@ -107,8 +107,8 @@ An optional list of Hook objects. When given in the server configuration file, t
 #### AllowEvent
 
 #### Secret
-A string that must be passed in the request. Requests that don't have a matching
-secret will be ignored. Note that Gitlab does not support this feature.
+A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
+digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any secret from the server-wide configuration. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
