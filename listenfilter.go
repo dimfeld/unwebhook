@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/zenoss/glog"
 	"net"
 )
 
@@ -14,7 +14,6 @@ type ListenFilter struct {
 	net.Listener
 	// BlackList or WhiteList.
 	Behavior   int
-	Logger     *log.Logger
 	FilterAddr map[string]bool
 }
 
@@ -36,17 +35,14 @@ func (f *ListenFilter) Accept() (c net.Conn, err error) {
 
 		c.Close()
 
-		if f.Logger != nil {
-			f.Logger.Println("Denied connection from", addr)
-		}
+		glog.Infoln("Denied connection from", addr)
 	}
 }
 
-func NewListenFilter(l net.Listener, behavior int, logger *log.Logger) *ListenFilter {
+func NewListenFilter(l net.Listener, behavior int) *ListenFilter {
 	return &ListenFilter{
 		Listener:   l,
 		Behavior:   behavior,
-		Logger:     logger,
 		FilterAddr: make(map[string]bool),
 	}
 }

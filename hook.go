@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/zenoss/glog"
 	"os/exec"
 	"text/template"
 	"time"
@@ -42,7 +43,7 @@ func (hook *Hook) Execute(e Event) {
 			}
 
 			if !allowed {
-				logger.Println("Hook %s got disallowed event type %s", hook.Url, eventType)
+				glog.Warningf("Hook %s got disallowed event type %s\n", hook.Url, eventType)
 				return
 			}
 		}
@@ -54,15 +55,19 @@ func (hook *Hook) Execute(e Event) {
 		for _, c := range commits {
 			err := hook.processEvent(c)
 			if err != nil {
-				logger.Printf("Error processing %s: %s", hook.Url, err)
-				debug(e)
+				glog.Errorf("Error processing %s: %s\n", hook.Url, err)
+				if glog.V(1) {
+					glog.Info(e)
+				}
 			}
 		}
 	} else {
 		err := hook.processEvent(e)
 		if err != nil {
-			logger.Printf("Error processing %s: %s", hook.Url, err)
-			debug(e)
+			glog.Errorf("Error processing %s: %s\n", hook.Url, err)
+			if glog.V(1) {
+				glog.Info(e)
+			}
 		}
 	}
 }
@@ -111,7 +116,7 @@ func (hook *Hook) processCommand(e Event, templateList []*template.Template) ([]
 }
 
 func (hook *Hook) runCommand(args []string) error {
-	debug("Running", args)
+	glog.Infoln("Running", args)
 	cmd := exec.Command(args[0], args[1:]...)
 	if len(hook.Env) != 0 {
 		cmd.Env = hook.Env

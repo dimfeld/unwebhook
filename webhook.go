@@ -1,10 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/dimfeld/goconfig"
-	"log"
+	"github.com/zenoss/glog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -51,7 +52,7 @@ type Hooks struct {
 type Config struct {
 	ListenAddress string
 
-	DebugMode bool
+	LogDir string
 
 	// The maximum amount of time to wait for a command to finish.
 	// Default is 5 seconds.
@@ -60,9 +61,6 @@ type Config struct {
 	// Accept connections from only the given IP addresses.
 	AcceptIp []string
 
-	LogFile   string
-	LogPrefix string
-
 	// Default secret required in requests. See the Hook struct for more description.
 	Secret string
 
@@ -70,23 +68,6 @@ type Config struct {
 	HookPaths []string
 
 	Hook []*Hook
-}
-
-var (
-	logger    *log.Logger
-	debugMode bool
-)
-
-func debugf(format string, args ...interface{}) {
-	if debugMode {
-		logger.Printf(format, args...)
-	}
-}
-
-func debug(args ...interface{}) {
-	if debugMode {
-		logger.Println(args...)
-	}
 }
 
 func (c *Config) MergeHooks(other Hooks) {
@@ -104,7 +85,7 @@ func (c *Config) AddHookFile(file string) {
 	} else {
 		f, err := os.Open(file)
 		if err != nil {
-			logger.Printf("Error loading %s: %s", file, err)
+			glog.Fatalf("Error loading %s: %s", file, err)
 			return
 		}
 		defer f.Close()
@@ -112,7 +93,7 @@ func (c *Config) AddHookFile(file string) {
 
 	_, err := toml.DecodeReader(f, h)
 	if err != nil {
-		logger.Printf("Error loading %s: %s", file, err)
+		glog.Fatalf("Error loading %s: %s", file, err)
 		return
 	}
 
@@ -122,7 +103,7 @@ func (c *Config) AddHookFile(file string) {
 func (c *Config) AddHookPath(p string) {
 	info, err := os.Stat(p)
 	if err != nil {
-		logger.Printf("Error loading %s: %s", p, err)
+		glog.Fatalf("Error loading %s: %s", p, err)
 		return
 	}
 
@@ -130,7 +111,7 @@ func (c *Config) AddHookPath(p string) {
 		filepath.Walk(p,
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
-					logger.Printf("Error loading %s, %s", path, err)
+					glog.Fatalf("Error loading %s, %s", path, err)
 					return err
 				}
 				if info.IsDir() {
@@ -150,7 +131,7 @@ func catchSIGINT(f func(), quit bool) {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for _ = range c {
-			logger.Println("SIGINT received...")
+			glog.Info("SIGINT received...")
 			f()
 			if quit {
 				os.Exit(1)
@@ -160,24 +141,26 @@ func catchSIGINT(f func(), quit bool) {
 }
 
 func main() {
+	flag.Parse()
+
 	config := &Config{
 		ListenAddress:  ":80",
 		CommandTimeout: 5,
 	}
 
-	mainConfigPath := os.Getenv("WEBHOOK_CONFFILE")
-	hooksStartIndex := 1
+	mainConfigPath := os.Getenv("UNWEBHOOK_CONFFILE")
+	hooksStartIndex := 0
 	if mainConfigPath == "" {
-		if len(os.Args) > 1 {
-			mainConfigPath = os.Args[1]
+		if flag.NArg() != 0 {
+			mainConfigPath = flag.Arg(0)
+			hooksStartIndex = 1
 		} else {
 			mainConfigPath = os.Args[0] + ".conf"
 		}
-		hooksStartIndex = 2
 	}
 
 	if mainConfigPath == "-" {
-		goconfig.Load(config, os.Stdin, "WEBHOOK")
+		goconfig.Load(config, os.Stdin, "UNWEBHOOK")
 	} else {
 		f, err := os.Open(mainConfigPath)
 		if err != nil {
@@ -185,7 +168,7 @@ func main() {
 				mainConfigPath, err)
 			os.Exit(1)
 		}
-		err = goconfig.Load(config, f, "WEBHOOK")
+		err = goconfig.Load(config, f, "UNWEBHOOK")
 		f.Close()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading config file %s: %s",
@@ -194,28 +177,26 @@ func main() {
 		}
 	}
 
-	logFile, err := os.OpenFile(config.LogFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open log file %s\n", config.LogFile)
-		os.Exit(1)
+	// Use config.LogDir if not given on the command line.
+	if config.LogDir != "" {
+		dir := flag.CommandLine.Lookup("log_dir")
+		if dir != nil && dir.Value.String() == "" {
+			flag.Set("log_dir", config.LogDir)
+		}
 	}
-
-	logger = log.New(logFile, config.LogPrefix, log.LstdFlags)
-
-	debugMode = config.DebugMode
 
 	for _, h := range config.HookPaths {
 		config.AddHookPath(h)
 	}
 
-	if len(os.Args) > hooksStartIndex {
-		for _, arg := range os.Args[hooksStartIndex:] {
+	if flag.NArg() > hooksStartIndex {
+		for _, arg := range flag.Args()[hooksStartIndex:] {
 			config.AddHookPath(arg)
 		}
 	}
 
 	closer := func() {
-		logFile.Close()
+		glog.Flush()
 	}
 	catchSIGINT(closer, true)
 	defer closer()
@@ -234,7 +215,7 @@ func main() {
 
 		err := h.CreateTemplates()
 		if err != nil {
-			logger.Printf("Failed parsing template %s: %s", h.Url, err)
+			glog.Errorf("Failed parsing template %s: %s", h.Url, err)
 			failed = true
 		}
 	}

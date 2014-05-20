@@ -66,18 +66,11 @@ digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any server-wide secret. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
-#### LogFile
-The path to the log file. If not given, the default `webhook-shell.log` is used, written to the current directory.
+#### LogDir
+The directory of the log file. If not given, the default is the current directory. This can also be specified on the command line using the -log_dir command-line option.
 
 ```
-LogFile = "/var/log/webhook-shell.log"
-```
-
-#### LogPrefix
-A string prepended to each log entry. If not given, no prefix is used.
-
-```
-LogPrefix = "UNWEBHOOK_ABC"
+LogDir = "/var/log/unwebhook"
 ```
 
 #### HookPaths
@@ -86,10 +79,6 @@ An optional list of files and directories, from which the server will load hooks
 ```
 HookPaths = [ "/etc/unwebhook/conf.d", "/etc/unwebhook/hooks.conf" ]
 ```
-
-#### DebugMode
-If true, enables extra logging.
-
 
 #### Hook
 An optional list of Hook objects. When given in the server configuration file, this looks identical to a list of hooks as described in the Hook Configuration section below. Due to limitations of the TOML format, any hook definitions in the main configuration file must be at the end.

@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"github.com/dimfeld/httptreemux"
+	"github.com/zenoss/glog"
 	"net"
 	"net/http"
 	"strings"
@@ -28,7 +29,7 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 	if hook.Secret != "" {
 		secret := r.Header.Get("X-Hub-Signature")
 		if !strings.HasPrefix(secret, "sha1=") {
-			logger.Printf("Request with no secret for hook %s from %s",
+			glog.Warningf("Request with no secret for hook %s from %s\n",
 				r.URL.Path, r.RemoteAddr)
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -37,7 +38,7 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 		hash := hmac.New(sha1.New, []byte(hook.Secret))
 		expected := hash.Sum(buffer.Bytes())
 		if !hmac.Equal(expected, []byte(secret[5:])) {
-			logger.Printf("Request with bad secret for hook %s from %s",
+			glog.Warningf("Request with bad secret for hook %s from %s\n",
 				r.URL.Path, r.RemoteAddr)
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -51,9 +52,7 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 
 func handlerWrapper(handler HookHandler, hook *Hook) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, params map[string]string) {
-		if logger != nil {
-			logger.Println("Called", r.URL.Path)
-		}
+		glog.Infoln("Called", r.URL.Path)
 		handler(w, r, params, hook)
 	}
 }
@@ -64,11 +63,11 @@ func RunServer(config *Config) {
 
 	listener, err := net.Listen("tcp", config.ListenAddress)
 	if err != nil {
-		logger.Fatal("Could not listen on", config.ListenAddress)
+		glog.Fatal("Could not listen on", config.ListenAddress)
 	}
 
 	if len(config.AcceptIp) != 0 {
-		listenFilter := NewListenFilter(listener, WhiteList, logger)
+		listenFilter := NewListenFilter(listener, WhiteList)
 		for _, a := range config.AcceptIp {
 			listenFilter.FilterAddr[a] = true
 		}
@@ -81,5 +80,5 @@ func RunServer(config *Config) {
 		router.POST(hook.Url, handlerWrapper(hookHandler, hook))
 	}
 
-	logger.Fatal(http.Serve(listener, router))
+	glog.Fatal(http.Serve(listener, router))
 }
