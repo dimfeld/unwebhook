@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"text/template"
 )
 
 type Hook struct {
@@ -17,20 +18,20 @@ type Hook struct {
 	// If blank, the current working directory is used.
 	Dir string
 	// Env is a list of environment variables to set. If empty, the current
-	// environment is used.
+	// environment is used. Each item takes the form "key=value"
 	Env []string
 
-	// Accept notifications from the listed servers.
-	// Valid values are "gitlab" and "github". By default,
-	// all servers are allowed.
-	AcceptServer []string
+	// If PerCommit is true, call the hook once for each commit in the message.
+	// Otherwise it is just called once per message.
+	PerCommit bool
 
-	// Accept notifications for the following events.
-	// Valid values are "push", "newissue"
-	AcceptEvent []string
+	// If empty, all events are accepted.
+	AllowEvent []string
 
 	// Commands to run.
 	Commands []string
+
+	template []*template.Template
 }
 
 type Hooks struct {
@@ -45,7 +46,7 @@ type Config struct {
 	// Accept connections from only the given IP addresses.
 	AcceptIp []string
 
-	Printfile string
+	LogFile   string
 	LogPrefix string
 
 	// Paths to search for hook files
@@ -168,13 +169,13 @@ func main() {
 		}
 	}
 
-	Printfile, err := os.OpenFile(config.Printfile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640)
+	logFile, err := os.OpenFile(config.LogFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open log file %s\n", config.Printfile)
+		fmt.Fprintf(os.Stderr, "Could not open log file %s\n", config.LogFile)
 		os.Exit(1)
 	}
 
-	logger = log.New(Printfile, config.LogPrefix, log.LstdFlags)
+	logger = log.New(logFile, config.LogPrefix, log.LstdFlags)
 
 	debugMode = config.DebugMode
 
@@ -189,10 +190,23 @@ func main() {
 	}
 
 	closer := func() {
-		Printfile.Close()
+		logFile.Close()
 	}
 	catchSIGINT(closer, true)
 	defer closer()
+
+	failed := false
+	for _, h := range config.Hook {
+		err := h.CreateTemplates()
+		if err != nil {
+			logger.Printf("Failed parsing template %s: %s", h.Url, err)
+			failed := true
+		}
+	}
+
+	if failed {
+		os.Exit(1)
+	}
 
 	RunServer(config)
 }

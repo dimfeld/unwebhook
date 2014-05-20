@@ -1,15 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"github.com/dimfeld/httptreemux"
 	"net"
 	"net/http"
 )
 
-type HookHandler func(w http.ResponseWriter, r *http.Request, hook *Hook)
+type HookHandler func(http.ResponseWriter, *http.Request, map[string]string, *Hook)
 
-func hookHandler(w http.ResponseWriter, r *http.Request, hook *Hook) {
+func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]string, hook *Hook) {
+	githubEventType := r.Header().Get("X-GitHub-Event")
 
+	if r.ContentLength > 16384 {
+		// We should never get a request this large.
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	buffer := bytes.Buffer{}
+	buffer.ReadFrom(r.Body)
+	r.Body.Close()
+
+	event := NewEvent(buffer.Bytes(), githubEventType)
+	event["urlparams"] = params
+	hook.Execute(event)
 }
 
 func handlerWrapper(handler HookHandler, hook *Hook) httptreemux.HandlerFunc {
@@ -17,7 +32,7 @@ func handlerWrapper(handler HookHandler, hook *Hook) httptreemux.HandlerFunc {
 		if logger != nil {
 			logger.Println("Called", r.URL.Path)
 		}
-		handler(w, r, hook)
+		handler(w, r, params, hook)
 	}
 }
 
