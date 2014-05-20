@@ -1,11 +1,11 @@
 webhook-shell
 =============
 
-Webhook server for Gitlab and Github to run shell commands based on events.
+Webhook server for Gitlab and Github to run shell commands based on events. Currently under development.
 
-The server supports multiple hooks simultaneously, exposed at 
+The server supports multiple hooks simultaneously, exposed at customizable URLs.
 
-Note that I'm only using this regularly with Gitlab over a local network for push events. This means that it has not been well-tested. But I'm glad to accept pull requests or try to fix any issues you find.
+Note that I'm only using this regularly with Gitlab over a local network for push events, handling no more than a couple of requests each day. This means that it has not been well-tested in anything remotely close to a production environment. But I'm glad to accept pull requests or try to fix any issues you find.
 
 ## Usage
 
@@ -90,7 +90,19 @@ An optional list of Hook objects. When given in the server configuration file, t
 
 ### Hook Configuration
 
+#### Url
 
+#### Dir
+
+#### Env
+
+#### PerCommit
+
+#### AllowEvent
+
+#### Timeout
+
+#### Commands
 
 #### Command Templates
 
