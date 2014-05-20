@@ -57,7 +57,7 @@ type Config struct {
 	LogPrefix string
 
 	// Paths to search for hook files
-	HookPath []string
+	HookPaths []string
 
 	Hook []*Hook
 }
@@ -194,7 +194,7 @@ func main() {
 
 	debugMode = config.DebugMode
 
-	for _, h := range config.HookPath {
+	for _, h := range config.HookPaths {
 		config.AddHookPath(h)
 	}
 
