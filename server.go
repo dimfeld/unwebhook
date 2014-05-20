@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha1"
 	"github.com/dimfeld/httptreemux"
 	"net"
 	"net/http"
+	"strings"
 )
 
 type HookHandler func(http.ResponseWriter, *http.Request, map[string]string, *Hook)
@@ -21,6 +24,25 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 	buffer := bytes.Buffer{}
 	buffer.ReadFrom(r.Body)
 	r.Body.Close()
+
+	if hook.Secret != "" {
+		secret := r.Header.Get("X-Hub-Signature")
+		if !strings.HasPrefix(secret, "sha1=") {
+			logger.Printf("Request with no secret for hook %s from %s",
+				r.URL.Path, r.RemoteAddr)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		hash := hmac.New(sha1.New, []byte(hook.Secret))
+		expected := hash.Sum(buffer.Bytes())
+		if !hmac.Equal(expected, []byte(secret[5:])) {
+			logger.Printf("Request with bad secret for hook %s from %s",
+				r.URL.Path, r.RemoteAddr)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
 
 	event := NewEvent(buffer.Bytes(), githubEventType)
 	event["urlparams"] = params

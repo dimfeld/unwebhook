@@ -34,6 +34,13 @@ type Hook struct {
 	// Override the default timeout.
 	Timeout int
 
+	// Secret required in the request. Requests that don't have a matching
+	// Secret will be ignored. Note that Gitlab does not support this feature.
+	// If specified, this overrides any server-wide secret.
+	// If a secret is present in the server-wide configuration, it can be disabled for
+	// this hook by setting the hook's secret to "none".
+	Secret string
+
 	template [][]*template.Template
 }
 
@@ -55,6 +62,9 @@ type Config struct {
 
 	LogFile   string
 	LogPrefix string
+
+	// Default secret required in requests. See the Hook struct for more description.
+	Secret string
 
 	// Paths to search for hook files
 	HookPaths []string
