@@ -4,42 +4,72 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/dimfeld/goconfig"
-	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 )
 
 type Hook struct {
-	// Cwd The
-	Cwd string
+	// URL at which this hook should be available.
+	Url string
+	// Dir is the working directory from which the command should be run.
+	// If blank, the current working directory is used.
+	Dir string
+	// Env is a list of environment variables to set. If empty, the current
+	// environment is used.
+	Env []string
+
 	// Accept notifications from the listed servers.
 	// Valid values are "gitlab" and "github". By default,
 	// all servers are allowed.
 	AcceptServer []string
+
 	// Accept notifications for the following events.
 	// Valid values are "push", "newissue"
 	AcceptEvent []string
-	Commands    []string
+
+	// Commands to run.
+	Commands []string
 }
 
 type Hooks struct {
-	Hook []Hook
+	Hook []*Hook
 }
 
 type Config struct {
 	ListenAddress string
-	Port          int
 
-	LogFile   string
+	DebugMode bool
+
+	// Accept connections from only the given IP addresses.
+	AcceptIp []string
+
+	Printfile string
 	LogPrefix string
 
+	// Paths to search for hook files
 	HookPath []string
 
-	Hook []Hook
+	Hook []*Hook
 }
 
-var logger log.Logger
+var (
+	logger    *log.Logger
+	debugMode bool
+)
+
+func debugf(format string, args ...interface{}) {
+	if debugMode {
+		logger.Printf(format, args...)
+	}
+}
+
+func debug(args ...interface{}) {
+	if debugMode {
+		logger.Println(args...)
+	}
+}
 
 func (c *Config) MergeHooks(other Hooks) {
 	c.Hook = append(c.Hook, other.Hook...)
@@ -50,14 +80,14 @@ func (c *Config) AddHookFile(filepath string) {
 
 	f, err := os.Open(filepath)
 	if err != nil {
-		logger.Logf("Error loading %s: %s", filepath, err)
+		logger.Printf("Error loading %s: %s", filepath, err)
 		return
 	}
 	defer f.Close()
 
 	_, err = toml.DecodeReader(f, h)
 	if err != nil {
-		logger.Logf("Error loading %s: %s", filepath, err)
+		logger.Printf("Error loading %s: %s", filepath, err)
 		return
 	}
 
@@ -67,7 +97,7 @@ func (c *Config) AddHookFile(filepath string) {
 func (c *Config) AddHookPath(p string) {
 	info, err := os.Stat(p)
 	if err != nil {
-		logger.Logf("Error loading %s: %s", p, err)
+		logger.Printf("Error loading %s: %s", p, err)
 		return
 	}
 
@@ -75,7 +105,7 @@ func (c *Config) AddHookPath(p string) {
 		filepath.Walk(p,
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
-					logger.Logf("Error loading %s, %s", path, err)
+					logger.Printf("Error loading %s, %s", path, err)
 					return err
 				}
 				if info.IsDir() {
@@ -83,24 +113,39 @@ func (c *Config) AddHookPath(p string) {
 				}
 
 				c.AddHookFile(path)
+				return nil
 			})
 	} else {
 		c.AddHookFile(p)
 	}
 }
 
+func catchSIGINT(f func(), quit bool) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for _ = range c {
+			logger.Println("SIGINT received...")
+			f()
+			if quit {
+				os.Exit(1)
+			}
+		}
+	}()
+}
+
 func main() {
-	config = &Config{
-		Port: 80,
+	config := &Config{
+		ListenAddress: ":80",
 	}
 
 	mainConfigPath := os.Getenv("WEBHOOK_CONFFILE")
 	hooksStartIndex := 1
 	if mainConfigPath == "" {
 		if len(os.Args) > 1 {
-			mainConfigPath := os.Args[1]
+			mainConfigPath = os.Args[1]
 		} else {
-			mainConfigPath := os.Args[0] + ".conf"
+			mainConfigPath = os.Args[0] + ".conf"
 		}
 		hooksStartIndex = 2
 	}
@@ -110,7 +155,7 @@ func main() {
 	} else {
 		f, err := os.Open(mainConfigPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to open config file %s: %s".
+			fmt.Fprintf(os.Stderr, "Failed to open config file %s: %s",
 				mainConfigPath, err)
 			os.Exit(1)
 		}
@@ -123,15 +168,31 @@ func main() {
 		}
 	}
 
-	for h := range config.HookPath {
+	Printfile, err := os.OpenFile(config.Printfile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not open log file %s\n", config.Printfile)
+		os.Exit(1)
+	}
+
+	logger = log.New(Printfile, config.LogPrefix, log.LstdFlags)
+
+	debugMode = config.DebugMode
+
+	for _, h := range config.HookPath {
 		config.AddHookPath(h)
 	}
 
 	if len(os.Args) > hooksStartIndex {
-		for arg := range os.Args[hooksStartIndex:] {
+		for _, arg := range os.Args[hooksStartIndex:] {
 			config.AddHookPath(arg)
 		}
 	}
+
+	closer := func() {
+		Printfile.Close()
+	}
+	catchSIGINT(closer, true)
+	defer closer()
 
 	RunServer(config)
 }
