@@ -226,6 +226,12 @@ func main() {
 			h.Timeout = config.CommandTimeout
 		}
 
+		if h.Secret == "none" {
+			h.Secret = ""
+		} else if h.Secret == "" {
+			h.Secret = config.Secret
+		}
+
 		err := h.CreateTemplates()
 		if err != nil {
 			logger.Printf("Failed parsing template %s: %s", h.Url, err)
