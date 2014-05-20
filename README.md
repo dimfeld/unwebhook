@@ -1,7 +1,7 @@
 unwebhook
 =============
 
-Webhook server for Gitlab and Github to run shell commands based on events. Currently under development.
+Webhook server for Gitlab and Github to run arbitrary commands based on events. Currently under development.
 
 The server supports multiple hooks simultaneously, exposed at customizable URLs.
 
