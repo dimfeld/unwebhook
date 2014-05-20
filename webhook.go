@@ -29,9 +29,12 @@ type Hook struct {
 	AllowEvent []string
 
 	// Commands to run.
-	Commands []string
+	Commands [][]string
 
-	template []*template.Template
+	// Override the default timeout.
+	Timeout int
+
+	template [][]*template.Template
 }
 
 type Hooks struct {
@@ -42,6 +45,10 @@ type Config struct {
 	ListenAddress string
 
 	DebugMode bool
+
+	// The maximum amount of time to wait for a command to finish.
+	// Default is 5 seconds.
+	CommandTimeout int
 
 	// Accept connections from only the given IP addresses.
 	AcceptIp []string
@@ -76,19 +83,26 @@ func (c *Config) MergeHooks(other Hooks) {
 	c.Hook = append(c.Hook, other.Hook...)
 }
 
-func (c *Config) AddHookFile(filepath string) {
+func (c *Config) AddHookFile(file string) {
 	h := Hooks{}
 
-	f, err := os.Open(filepath)
-	if err != nil {
-		logger.Printf("Error loading %s: %s", filepath, err)
-		return
-	}
-	defer f.Close()
+	f := os.Stdin
 
-	_, err = toml.DecodeReader(f, h)
+	if file == "-" {
+		// Change file here so that any error messages will look better.
+		file = "stdin"
+	} else {
+		f, err := os.Open(file)
+		if err != nil {
+			logger.Printf("Error loading %s: %s", file, err)
+			return
+		}
+		defer f.Close()
+	}
+
+	_, err := toml.DecodeReader(f, h)
 	if err != nil {
-		logger.Printf("Error loading %s: %s", filepath, err)
+		logger.Printf("Error loading %s: %s", file, err)
 		return
 	}
 
@@ -137,7 +151,8 @@ func catchSIGINT(f func(), quit bool) {
 
 func main() {
 	config := &Config{
-		ListenAddress: ":80",
+		ListenAddress:  ":80",
+		CommandTimeout: 5,
 	}
 
 	mainConfigPath := os.Getenv("WEBHOOK_CONFFILE")
@@ -197,6 +212,10 @@ func main() {
 
 	failed := false
 	for _, h := range config.Hook {
+		if h.Timeout == 0 {
+			h.Timeout = config.CommandTimeout
+		}
+
 		err := h.CreateTemplates()
 		if err != nil {
 			logger.Printf("Failed parsing template %s: %s", h.Url, err)
