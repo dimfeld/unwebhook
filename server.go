@@ -68,8 +68,7 @@ func handlerWrapper(handler HookHandler, hook *Hook) httptreemux.HandlerFunc {
 	}
 }
 
-func RunServer(config *Config) {
-
+func SetupServer(config *Config) (net.Listener, http.Handler) {
 	var listener net.Listener = nil
 
 	listener, err := net.Listen("tcp", config.ListenAddress)
@@ -90,6 +89,9 @@ func RunServer(config *Config) {
 	for _, hook := range config.Hook {
 		router.POST(hook.Url, handlerWrapper(hookHandler, hook))
 	}
+}
 
+func RunServer(config *Config) {
+	listener, router := SetupServer(config)
 	glog.Fatal(http.Serve(listener, router))
 }
