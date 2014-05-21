@@ -53,7 +53,11 @@ func (hook *Hook) Execute(e Event) {
 	if hook.PerCommit {
 		commits := e.Commits()
 		if commits != nil {
-			for _, c := range commits {
+			for _, generic := range commits {
+				c, ok := generic.(Event)
+				if !ok {
+					glog.Errorf("Commit had type %T", generic)
+				}
 				err := hook.processEvent(c)
 				if err != nil {
 					glog.Errorf("Error processing %s: %s\n", hook.Url, err)

@@ -7,8 +7,6 @@ import (
 
 type Event map[string]interface{}
 
-type CommitList []Event
-
 // Information to translate from GitLab to GitHub format.
 var eventTranslate = map[string]string{
 	"total_commits_count": "size",
@@ -20,7 +18,7 @@ var commitTranslate = map[string]string{
 	"id": "sha",
 }
 
-func (e Event) Commits() CommitList {
+func (e Event) Commits() []interface{} {
 	generic, ok := e["commits"]
 	if !ok {
 		if glog.V(1) {
@@ -29,13 +27,13 @@ func (e Event) Commits() CommitList {
 		return nil
 	}
 
-	c, ok := generic.(CommitList)
+	interfaceList, ok := generic.([]interface{})
 	if !ok {
 		glog.Errorf("Commit list had type %T\n", generic)
 		return nil
 	}
 
-	return c
+	return interfaceList
 }
 
 // Normalize makes GitLab events look like GitHub events.
@@ -50,15 +48,20 @@ func (e Event) normalize() {
 	}
 
 	commits := e.Commits()
-	for _, c := range commits {
-		for gitlabName, githubName := range commitTranslate {
-			value, ok := c[gitlabName]
-			if ok {
-				c[githubName] = value
+	if commits != nil {
+		for _, generic := range commits {
+			c, ok := generic.(Event)
+			if !ok {
+				glog.Errorf("Commit had type %T", generic)
+			}
+			for gitlabName, githubName := range commitTranslate {
+				value, ok := c[gitlabName]
+				if ok {
+					c[githubName] = value
+				}
 			}
 		}
 	}
-
 }
 
 // Create a new event from the given JSON. If the event type is blank,
