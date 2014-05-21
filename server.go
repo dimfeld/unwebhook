@@ -89,6 +89,8 @@ func SetupServer(config *Config) (net.Listener, http.Handler) {
 	for _, hook := range config.Hook {
 		router.POST(hook.Url, handlerWrapper(hookHandler, hook))
 	}
+
+	return listener, router
 }
 
 func RunServer(config *Config) {
