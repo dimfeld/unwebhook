@@ -71,6 +71,8 @@ digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any server-wide secret. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
+The use of a secret is highly recommended, since it can protect against malicious data being plugged into your commands.
+
 #### LogDir
 The directory of the log file. If not given, the default is the current directory. This can also be specified on the command line using the -log_dir command-line option.
 
