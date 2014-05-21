@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/dimfeld/glog"
 	"os"
@@ -11,6 +12,16 @@ import (
 )
 
 // Hook is defined in webhook.go.
+
+var templateFuncs = template.FuncMap{
+	"json": func(obj interface{}) string {
+		result, err := json.Marshal(obj)
+		if err != nil {
+			return "<< " + err.Error() + " >>"
+		}
+		return string(result)
+	},
+}
 
 // CreateTemplates parses the Commands array into templates.
 func (hook *Hook) CreateTemplates() error {
