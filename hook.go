@@ -60,6 +60,10 @@ func (hook *Hook) Execute(e Event) {
 					glog.Errorf("Commit had type %T", generic)
 					continue
 				}
+
+				// Set the current commit to pass to the hook.
+				e["commit"] = c
+
 				err := hook.processEvent(c)
 				if err != nil {
 					glog.Errorf("Error processing %s: %s\n", hook.Url, err)
