@@ -203,6 +203,8 @@ func main() {
 
 	failed := false
 	for _, h := range config.Hook {
+		glog.Infoln("Loading hook", h.Url)
+
 		if h.Timeout == 0 {
 			h.Timeout = config.CommandTimeout
 		}
