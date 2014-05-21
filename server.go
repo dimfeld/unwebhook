@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/dimfeld/glog"
 	"github.com/dimfeld/httptreemux"
@@ -44,10 +45,12 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 		}
 
 		hash := hmac.New(sha1.New, []byte(hook.Secret))
-		expected := hash.Sum(buffer.Bytes())
-		if !hmac.Equal(expected, []byte(secret[5:])) {
-			glog.Warningf("Request with bad secret for hook %s from %s\n",
-				r.URL.Path, r.RemoteAddr)
+		hash.Write(buffer.Bytes())
+		expected := hash.Sum(nil)
+		seen, err := hex.DecodeString(secret[5:])
+		if err != nil || !hmac.Equal(expected, seen) {
+			glog.Warningf("Request with bad secret for hook %s from %s\nExpected %s, saw %s",
+				r.URL.Path, r.RemoteAddr, hex.EncodeToString(expected), secret)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
