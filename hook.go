@@ -64,7 +64,7 @@ func (hook *Hook) Execute(e Event) {
 				// Set the current commit to pass to the hook.
 				e["commit"] = c
 
-				err := hook.processEvent(c)
+				err := hook.processEvent(e)
 				if err != nil {
 					glog.Errorf("Error processing %s: %s\n", hook.Url, err)
 					if glog.V(1) {
