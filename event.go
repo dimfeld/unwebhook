@@ -71,6 +71,13 @@ func NewEvent(jsonData []byte, eventName string) Event {
 		}
 	}
 
+	if payload, ok := e["object_attributes"].(Event); ok {
+		// For GitLab events, export all object_attributes fields into the event scope.
+		for key, value := range payload {
+			e[key] = value
+		}
+	}
+
 	e.normalize()
 
 	if eventName == "" {
