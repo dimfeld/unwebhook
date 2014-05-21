@@ -218,7 +218,7 @@ ListenAddress = ":8090"
 CommandTimeout = 4
 LogDir = "/var/log/unwebhook"
 HookPaths = [ "/etc/unwebhook.d" ]
-
+Secret = "abbadada"
 
 [[Hook]]
 Url = "/sync-to-server"
