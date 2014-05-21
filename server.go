@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/json"
 	"github.com/dimfeld/httptreemux"
 	"github.com/zenoss/glog"
 	"net"
@@ -25,6 +26,13 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 	buffer := bytes.Buffer{}
 	buffer.ReadFrom(r.Body)
 	r.Body.Close()
+
+	if glog.V(2) {
+		niceBuffer := &bytes.Buffer{}
+		json.Indent(niceBuffer, buffer.Bytes(), "", "  ")
+		glog.Infof("Hook %s received data %s\n",
+			r.URL.Path, string(niceBuffer.Bytes()))
+	}
 
 	if hook.Secret != "" {
 		secret := r.Header.Get("X-Hub-Signature")
