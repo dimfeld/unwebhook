@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/zenoss/glog"
+	"github.com/dimfeld/glog"
 )
 
 type Event map[string]interface{}

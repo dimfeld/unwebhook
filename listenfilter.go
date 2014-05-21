@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/zenoss/glog"
+	"github.com/dimfeld/glog"
 	"net"
 )
 

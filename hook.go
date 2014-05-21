@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/zenoss/glog"
+	"github.com/dimfeld/glog"
 	"os"
 	"os/exec"
 	"text/template"
