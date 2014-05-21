@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/zenoss/glog"
+	"os"
 	"os/exec"
 	"text/template"
 	"time"
@@ -54,9 +55,10 @@ func (hook *Hook) Execute(e Event) {
 		commits := e.Commits()
 		if commits != nil {
 			for _, generic := range commits {
-				c, ok := generic.(Event)
+				c, ok := generic.(map[string]interface{})
 				if !ok {
 					glog.Errorf("Commit had type %T", generic)
+					continue
 				}
 				err := hook.processEvent(c)
 				if err != nil {
@@ -128,6 +130,9 @@ func (hook *Hook) runCommand(args []string) error {
 		cmd.Env = hook.Env
 	}
 	cmd.Dir = hook.Dir
+	// TODO Make these redirectable
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	done := make(chan int, 1)
 
