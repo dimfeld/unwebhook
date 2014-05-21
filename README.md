@@ -3,7 +3,7 @@ unwebhook
 
 Webhook server for Gitlab and Github to run arbitrary commands based on events. The server supports multiple hooks simultaneously, exposed at customizable URLs.
 
-This hasn't been used in anything like a production environment. I have a test server for my own development receiving events from my Github repos, and another instance on my local network connected to a local Gitlab. But I'm glad to accept pull requests or try to fix any issues you find.
+This hasn't been used in anything approaching a production environment. Much of the functionality is known to work, but many options are untested, as noted below.
 
 ## Usage
 
@@ -42,7 +42,10 @@ The address and port on which to listen. If none is provided, the default `:80` 
 ListenAddress = 127.0.0.1:8080
 ```
 
-#### CommandTimeout **untested**
+#### CommandTimeout 
+
+**untested**
+
 The maximum time, in seconds, that any single command is allowed to run. The default value is 5.
 
 ```
@@ -50,7 +53,9 @@ CommandTimeout = 5
 ```
 
 #### AcceptIp
+
 **untested**
+
 A list of IP addresses from which to accept requests. Requests from non-allowed IPs are logged and ignored.
 
 If not specified, requests are allowed from any IP address.
@@ -59,7 +64,10 @@ If not specified, requests are allowed from any IP address.
 AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
 ```
 
-#### Secret **untested**
+#### Secret
+
+**untested**
+
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
 
@@ -72,7 +80,10 @@ The directory of the log file. If not given, the default is the current director
 LogDir = "/var/log/unwebhook"
 ```
 
-#### HookPaths **untested**
+#### HookPaths
+
+**untested**
+
 An optional list of files and directories, from which the server will load hooks. These paths are in addition to any hooks defined in the main configuration file or additional command line arguments.
 
 ```
@@ -120,7 +131,11 @@ If the value is `false`, the hook is run once per event.
 PerCommit = true
 ```
 
-#### AllowEvent **untested**
+#### AllowEvent 
+
+**untested**
+
+
 A list of events that this hook is allowed to handle. If an event's type is not in this list, it is ignored.
 
 This data is drawn from the `X-Github-Event` HTTP header field for Github events, and from the `object-kind` JSON field for Gitlab events. Gitlab events without an `object-kind` are given the value `push`.
@@ -129,7 +144,11 @@ This data is drawn from the `X-Github-Event` HTTP header field for Github events
 AllowEvent = [ "push", "issue" ]
 ```
 
-#### Secret **untested**
+#### Secret 
+
+**untested**
+
+
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
 
@@ -139,7 +158,11 @@ If specified, this overrides any secret from the server-wide configuration. If a
 Secret = "abcd"
 ```
 
-#### Timeout **untested**
+#### Timeout
+
+**untested**
+
+
 Overrides the server-wide Timeout setting. Any one command that runs longer than this value, in seconds, will be killed.
 
 ```
