@@ -178,11 +178,12 @@ func main() {
 	}
 
 	// Use config.LogDir if not given on the command line.
-	if config.LogDir != "" {
-		dir := flag.CommandLine.Lookup("log_dir")
-		if dir != nil && dir.Value.String() == "" {
-			flag.Set("log_dir", config.LogDir)
+	dir := flag.CommandLine.Lookup("log_dir")
+	if dir != nil && dir.Value.String() == "" {
+		if config.LogDir == "" {
+			config.LogDir = "."
 		}
+		flag.Set("log_dir", config.LogDir)
 	}
 
 	for _, h := range config.HookPaths {
