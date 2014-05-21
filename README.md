@@ -66,8 +66,6 @@ AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
 
 #### Secret
 
-**untested**
-
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
 
