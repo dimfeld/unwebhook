@@ -1,9 +1,7 @@
 unwebhook
 =============
 
-Webhook server for Gitlab and Github to run arbitrary commands based on events. Currently under development.
-
-The server supports multiple hooks simultaneously, exposed at customizable URLs.
+Webhook server for Gitlab and Github to run arbitrary commands based on events. The server supports multiple hooks simultaneously, exposed at customizable URLs.
 
 This hasn't been used in anything like a production environment. I have a test server for my own development receiving events from my Github repos, and another instance on my local network connected to a local Gitlab. But I'm glad to accept pull requests or try to fix any issues you find.
 
@@ -44,14 +42,15 @@ The address and port on which to listen. If none is provided, the default `:80` 
 ListenAddress = 127.0.0.1:8080
 ```
 
-#### CommandTimeout
-The maximum time, in seconds, that any single command is allowed to run.
+#### CommandTimeout **untested**
+The maximum time, in seconds, that any single command is allowed to run. The default value is 5.
 
 ```
 CommandTimeout = 5
 ```
 
 #### AcceptIp
+**untested**
 A list of IP addresses from which to accept requests. Requests from non-allowed IPs are logged and ignored.
 
 If not specified, requests are allowed from any IP address.
@@ -60,7 +59,7 @@ If not specified, requests are allowed from any IP address.
 AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
 ```
 
-#### Secret
+#### Secret **untested**
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
 
@@ -73,7 +72,7 @@ The directory of the log file. If not given, the default is the current director
 LogDir = "/var/log/unwebhook"
 ```
 
-#### HookPaths
+#### HookPaths **untested**
 An optional list of files and directories, from which the server will load hooks. These paths are in addition to any hooks defined in the main configuration file or additional command line arguments.
 
 ```
@@ -86,25 +85,133 @@ An optional list of Hook objects. When given in the server configuration file, t
 ### Hook Configuration
 
 #### Url
+The path at which the server exposes this hook. This does not include the server name, and must start with a slash.
+
+```
+Url = "/webhook/"
+or
+Url = "/webhook/:repo/hook"
+```
+
+A path element starting with a colon is a wildcard, which will match on any text in the given path element. In the example above, if the URL configured in GitHub is `/webhook/abc/hook`, then the `repo` variable will be set to `abc`. 
+
+Variables captured in this way are accessible in commands using the syntax `{{ .urlparams.ElementName }}`. In the example here, `{{ .urlparams.abc }}` would be replaced by the text `abc`. See below for more details on the substitution system.
 
 #### Dir
+The working directory from which to run the command.
+
+```
+Dir = "/home/user/repos"
+```
 
 #### Env
+A list environment variables, formatted as `key=value` that should replace the current environment. If not given, the current environment is passed into the commands.
+
+```
+Env = [ "GONUMPROCS=1", "USER=abc" ]
+```
 
 #### PerCommit
+If this value is `true`, the hook will be run once for each commit in a push event, with the current commit exposed in the templating system as `.commit`.  A hook comfigured like this will not run anything for an event with no commits.
 
-#### AllowEvent
+If the value is `false`, the hook is run once per event.
 
-#### Secret
+```
+PerCommit = true
+```
+
+#### AllowEvent **untested**
+A list of events that this hook is allowed to handle. If an event's type is not in this list, it is ignored.
+
+This data is drawn from the `X-Github-Event` HTTP header field for Github events, and from the `object-kind` JSON field for Gitlab events. Gitlab events without an `object-kind` are given the value `push`.
+
+```
+AllowEvent = [ "push", "issue" ]
+```
+
+#### Secret **untested**
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any secret from the server-wide configuration. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
-#### Timeout
+```
+Secret = "abcd"
+```
+
+#### Timeout **untested**
+Overrides the server-wide Timeout setting. Any one command that runs longer than this value, in seconds, will be killed.
+
+```
+Timeout = 20
+```
 
 #### Commands
+A list of commands and arguments to be executed when this hook runs. For each command, the first list item is the executable and the remaining list items are the arguments to that executable. $PATH lookups are performed automatically if no directory is given.
 
-#### Command Templates
+```
+Commands = [
+  [ "echo", "Received commit, type = {{ .type }}, repo = {{.repository.name}}"  ],
+  [ "echo", "                 message = {{.commit.message}}" ]
+]
+```
+
+### Command Templates
+Each string in the  `Dir`, `Env`, and `Command` fields is a template, which can substitute data from the event's payload. Any data in the event's JSON is accessible. The template syntax is provided by Go's `text/template` package, so [full documentation](https://godoc.org/text/template) can be found there.
+
+A template substitution is delimited by `{{ double brackets }}`. Generally, the first character inside brackets will be a `.`, which represents the entire JSON payload.
+
+The template system also provides functions which can transform a particular item in some way. In addition to Go's built-in functions, unwebhook provides a `json` function to print an item and any subitems in JSON format.
+
+The examples below do not represent all of the functions available, but are some of the more useful ones in this context.
+
+```
+The repository data, in JSON format.
+{{ json .repository }}
+
+The number of commits in the event.
+{{ len .commits }}
+
+The first commit, translated into JSON. Note the pipe, which takes the resultof `index .commits 0` and sends it to the JSON function.
+{{ index .commits 0 | json }}
+
+The same as above, expressed with nested function calls instead of pipes.
+{{ json (index .commits 0) }}
+
+The timestamp of the first commit in the event.
+{{ (index .commits 0).timestamp }}
+
+The name of the repository's owner.
+{{ .repository.owner.name }}
+```
+
+### Environment Variables
+In addition to the templating system, the `Dir`, `Env`, and `Commands` members may have environment variables substituted using standard shell syntax such as `Dir="${HOME}/repos"`. The environment variables are taken from the environment in which the server is running, not the environment that may be defined by an `Env` list.
 
 ### Sample Configuration
+
+```
+ListenAddress = ":8090"
+CommandTimeout = 4
+LogDir = "/var/log/unwebhook"
+HookPaths = [ "/etc/unwebhook.d" ]
+
+
+[[Hook]]
+Url = "/sync-to-server"
+Dir = "$HOME/repos/{{ .repository.name }}"
+Env = [ "LOGNAME={{ .pusher.name }}" ]
+AllowEvent = ["push"]
+Timeout = 25
+
+Commands = [
+  ["git", "pull"],
+  ["rsync", "-r", ".", "{{ .repository.name }}.company.com:/opt/var/files"],
+]
+
+[[Hook]]
+# Here we have some script that can just process the JSON.
+Url = "/record-issue"
+Commands = [ [ "processevent", "{{ json . }}" ] ]
+
+```
