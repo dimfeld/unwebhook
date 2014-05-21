@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/zenoss/glog"
 )
 
 type Event map[string]interface{}
@@ -22,11 +23,15 @@ var commitTranslate = map[string]string{
 func (e Event) Commits() CommitList {
 	generic, ok := e["commits"]
 	if !ok {
+		if glog.V(1) {
+			glog.Infoln("Event had no commits")
+		}
 		return nil
 	}
 
 	c, ok := generic.(CommitList)
 	if !ok {
+		glog.Errorf("Commit list had type %T\n", generic)
 		return nil
 	}
 
@@ -60,15 +65,15 @@ func (e Event) normalize() {
 // this function will try to figure it out. Generally, GitHub events will
 // present a value for this in the HTTP Request, and GitLab events place
 // the event type in the JSON.
-func NewEvent(jsonData []byte, eventName string) Event {
+func NewEvent(jsonData []byte, eventName string) (Event, error) {
 	e := Event{}
-	json.Unmarshal(jsonData, e)
+	err := json.Unmarshal(jsonData, &e)
+	if err != nil {
+		return nil, err
+	}
 
-	if payload, ok := e["payload"].(Event); ok {
-		// For GitHub events, export all payload fields into the event scope.
-		for key, value := range payload {
-			e[key] = value
-		}
+	if glog.V(4) {
+		glog.Infof("Unnormalized event: %v", e)
 	}
 
 	if payload, ok := e["object_attributes"].(Event); ok {
@@ -79,6 +84,10 @@ func NewEvent(jsonData []byte, eventName string) Event {
 	}
 
 	e.normalize()
+
+	if glog.V(3) {
+		glog.Infof("Event: %v", e)
+	}
 
 	if eventName == "" {
 		var gitlabType string
@@ -92,5 +101,5 @@ func NewEvent(jsonData []byte, eventName string) Event {
 	} else {
 		e["type"] = eventName
 	}
-	return e
+	return e, nil
 }
