@@ -32,7 +32,7 @@ func (hook *Hook) CreateTemplates() error {
 
 		for j, cmd := range cmdList {
 
-			hook.template[i][j], err = template.New("tmpl").Parse(cmd)
+			hook.template[i][j], err = template.New("tmpl").Funcs(templateFuncs).Parse(cmd)
 			if err != nil {
 				hook.template = nil
 				return err
