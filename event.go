@@ -7,17 +7,6 @@ import (
 
 type Event map[string]interface{}
 
-// Information to translate from GitLab to GitHub format.
-var eventTranslate = map[string]string{
-	"total_commits_count": "size",
-	"repository":          "repo",
-	"after":               "head",
-}
-
-var commitTranslate = map[string]string{
-	"id": "sha",
-}
-
 func (e Event) Commits() []interface{} {
 	generic, ok := e["commits"]
 	if !ok {
@@ -36,6 +25,9 @@ func (e Event) Commits() []interface{} {
 	return interfaceList
 }
 
+// The docs I saw were outdated. There's no need for this since the formats are actually
+// the same.
+/*
 // Normalize makes GitLab events look like GitHub events.
 func (e Event) normalize() {
 	// Fortunately there's very little difference, at least in the push format.
@@ -63,6 +55,7 @@ func (e Event) normalize() {
 		}
 	}
 }
+*/
 
 // Create a new event from the given JSON. If the event type is blank,
 // this function will try to figure it out. Generally, GitHub events will
@@ -75,18 +68,12 @@ func NewEvent(jsonData []byte, eventName string) (Event, error) {
 		return nil, err
 	}
 
-	if glog.V(4) {
-		glog.Infof("Unnormalized event: %v", e)
-	}
-
 	if payload, ok := e["object_attributes"].(map[string]interface{}); ok {
 		// For GitLab events, export all object_attributes fields into the event scope.
 		for key, value := range payload {
 			e[key] = value
 		}
 	}
-
-	e.normalize()
 
 	if glog.V(3) {
 		glog.Infof("Event: %v", e)
