@@ -52,12 +52,14 @@ func (hook *Hook) Execute(e Event) {
 
 	if hook.PerCommit {
 		commits := e.Commits()
-		for _, c := range commits {
-			err := hook.processEvent(c)
-			if err != nil {
-				glog.Errorf("Error processing %s: %s\n", hook.Url, err)
-				if glog.V(1) {
-					glog.Info(e)
+		if commits != nil {
+			for _, c := range commits {
+				err := hook.processEvent(c)
+				if err != nil {
+					glog.Errorf("Error processing %s: %s\n", hook.Url, err)
+					if glog.V(1) {
+						glog.Info(e)
+					}
 				}
 			}
 		}
