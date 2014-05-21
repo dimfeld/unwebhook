@@ -5,7 +5,7 @@ Webhook server for Gitlab and Github to run arbitrary commands based on events. 
 
 The server supports multiple hooks simultaneously, exposed at customizable URLs.
 
-Note that I'm only using this regularly with Gitlab over a local network for push events, handling no more than a couple of requests each day. This means that it has not been well-tested in anything remotely close to a production environment. But I'm glad to accept pull requests or try to fix any issues you find.
+This hasn't been used in anything like a production environment. I have a test server for my own development receiving events from my Github repos, and another instance on my local network connected to a local Gitlab. But I'm glad to accept pull requests or try to fix any issues you find.
 
 ## Usage
 
