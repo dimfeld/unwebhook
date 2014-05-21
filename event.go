@@ -50,7 +50,7 @@ func (e Event) normalize() {
 	commits := e.Commits()
 	if commits != nil {
 		for _, generic := range commits {
-			c, ok := generic.(Event)
+			c, ok := generic.(map[string]interface{})
 			if !ok {
 				glog.Errorf("Commit had type %T", generic)
 			}
@@ -79,7 +79,7 @@ func NewEvent(jsonData []byte, eventName string) (Event, error) {
 		glog.Infof("Unnormalized event: %v", e)
 	}
 
-	if payload, ok := e["object_attributes"].(Event); ok {
+	if payload, ok := e["object_attributes"].(map[string]interface{}); ok {
 		// For GitLab events, export all object_attributes fields into the event scope.
 		for key, value := range payload {
 			e[key] = value
