@@ -23,22 +23,49 @@ var templateFuncs = template.FuncMap{
 	},
 }
 
+func createTemplate(source string) (*template.Template, error) {
+	source = os.ExpandEnv(source)
+	return template.New("tmpl").Funcs(templateFuncs).Parse(source)
+}
+
 // CreateTemplates parses the Commands array into templates.
 func (hook *Hook) CreateTemplates() error {
 	var err error
-	hook.template = make([][]*template.Template, len(hook.Commands))
+	hook.cmdTemplate = make([][]*template.Template, len(hook.Commands))
 	for i, cmdList := range hook.Commands {
-		hook.template[i] = make([]*template.Template, len(cmdList))
+		hook.cmdTemplate[i] = make([]*template.Template, len(cmdList))
 
 		for j, cmd := range cmdList {
 
-			hook.template[i][j], err = template.New("tmpl").Funcs(templateFuncs).Parse(cmd)
+			hook.cmdTemplate[i][j], err = createTemplate(cmd)
 			if err != nil {
-				hook.template = nil
+				hook.cmdTemplate = nil
 				return err
 			}
 		}
 	}
+
+	if len(hook.Env) != 0 {
+		hook.envTemplate = make([]*template.Template, len(hook.Env))
+		for i, env := range hook.Env {
+			hook.envTemplate[i], err = createTemplate(env)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		hook.envTemplate = nil
+	}
+
+	if hook.Dir != "" {
+		hook.dirTemplate, err = createTemplate(hook.Dir)
+		if err != nil {
+			return err
+		}
+	} else {
+		hook.dirTemplate = nil
+	}
+
 	return nil
 }
 
@@ -96,9 +123,32 @@ func (hook *Hook) Execute(e Event) {
 }
 
 func (hook *Hook) processEvent(e Event) error {
-	cmds := make([][]string, len(hook.template))
-	for i, t := range hook.template {
-		var err error
+	var err error
+	cmds := make([][]string, len(hook.cmdTemplate))
+	env := make([]string, len(hook.envTemplate))
+	dir := ""
+
+	if hook.dirTemplate != nil {
+		buf := &bytes.Buffer{}
+		err = hook.dirTemplate.Execute(buf, e)
+		dir = string(buf.Bytes())
+		if err != nil {
+			return err
+		}
+	}
+
+	if hook.envTemplate != nil {
+		for i, t := range hook.envTemplate {
+			buf := &bytes.Buffer{}
+			err = t.Execute(buf, e)
+			env[i] = string(buf.Bytes())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for i, t := range hook.cmdTemplate {
 		cmds[i], err = hook.processCommand(e, t)
 		if err != nil {
 			return err
@@ -112,7 +162,7 @@ func (hook *Hook) processEvent(e Event) error {
 	}
 
 	for _, cmd := range cmds {
-		err := hook.runCommand(cmd)
+		err := hook.runCommand(cmd, env, dir)
 		if err != nil {
 			return err
 		}
@@ -138,13 +188,13 @@ func (hook *Hook) processCommand(e Event, templateList []*template.Template) ([]
 	return cmdList, nil
 }
 
-func (hook *Hook) runCommand(args []string) error {
+func (hook *Hook) runCommand(args []string, env []string, dir string) error {
 	glog.Infoln("Running", args)
 	cmd := exec.Command(args[0], args[1:]...)
-	if len(hook.Env) != 0 {
-		cmd.Env = hook.Env
+	if len(env) != 0 {
+		cmd.Env = env
 	}
-	cmd.Dir = hook.Dir
+	cmd.Dir = dir
 	// TODO Make these redirectable
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

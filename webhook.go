@@ -42,7 +42,9 @@ type Hook struct {
 	// this hook by setting the hook's secret to "none".
 	Secret string
 
-	template [][]*template.Template
+	cmdTemplate [][]*template.Template
+	envTemplate []*template.Template
+	dirTemplate *template.Template
 }
 
 type Hooks struct {
@@ -164,14 +166,14 @@ func main() {
 	} else {
 		f, err := os.Open(mainConfigPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to open config file %s: %s",
+			fmt.Fprintf(os.Stderr, "Failed to open config file %s: %s\n",
 				mainConfigPath, err)
 			os.Exit(1)
 		}
 		err = goconfig.Load(config, f, "UNWEBHOOK")
 		f.Close()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading config file %s: %s",
+			fmt.Fprintf(os.Stderr, "Error reading config file %s: %s\n",
 				mainConfigPath, err)
 			os.Exit(1)
 		}
