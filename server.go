@@ -59,6 +59,7 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 	event, err := NewEvent(buffer.Bytes(), githubEventType)
 	if err != nil {
 		glog.Errorf("Error parinsg JSON for %s: %s", r.URL.Path, err)
+		return
 	}
 	event["urlparams"] = params
 	go hook.Execute(event)
