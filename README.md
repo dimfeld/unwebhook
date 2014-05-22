@@ -200,6 +200,8 @@ In addition to the templating system, the `Dir`, `Env`, and `Commands` members m
 
 ### Sample Configuration
 
+Some sample configuration files can be found in the `conf` directory of this repository. Below is a simple one.
+
 ```
 ListenAddress = ":8090"
 CommandTimeout = 4
