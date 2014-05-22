@@ -226,3 +226,10 @@ Url = "/record-issue"
 Commands = [ [ "processevent", "{{ json . }}" ] ]
 
 ```
+
+## Acknowledgements
+
+* TOML parser from [BurntSushi/toml](https://github.com/BurntSushi/toml)
+* Logging code from my [slightly modified fork](https://github.com/dimfeld/glog) of [Zenoss's heavily modified glog](https://github.com/zenoss/glog)
+
+This project also uses my [httpmuxtree](https://github.com/dimfeld/httptreemux) and [goconfig](https://github.com/dimfeld/goconfig) libraries.
