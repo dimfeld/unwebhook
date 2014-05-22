@@ -57,10 +57,8 @@ A list of IP addresses from which to accept requests. Requests from non-allowed 
 If not specified, requests are allowed from any IP address.
 
 ```
-AcceptIps = [ "172.17.0.1", "192.168.1.65" ]
+AcceptIps = [ "172.17.0.1", "192.168.1.0/24" ]
 ```
-
-IP prefixes are not yet supported in this command. I may add them in the future.
 
 #### Secret
 
@@ -207,6 +205,7 @@ ListenAddress = ":8090"
 CommandTimeout = 4
 LogDir = "/var/log/unwebhook"
 HookPaths = [ "/etc/unwebhook.d" ]
+AcceptIps = [ "192.30.252.0/24" ]
 Secret = "abbadada"
 
 [[Hook]]
