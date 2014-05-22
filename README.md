@@ -39,7 +39,7 @@ These variables are read from the main configuration file and determine server-w
 The address and port on which to listen. If none is provided, the default `:80` is used.
 
 ```
-ListenAddress = 127.0.0.1:8080
+ListenAddress = "127.0.0.1:8080"
 ```
 
 #### CommandTimeout 
@@ -52,12 +52,12 @@ CommandTimeout = 5
 
 #### AcceptIps
 
-A list of IP addresses from which to accept requests. Requests from non-allowed IPs are logged and ignored.
+A list of IP addresses and prefixes from which to accept requests. Requests from non-allowed IPs are logged and ignored.
 
 If not specified, requests are allowed from any IP address.
 
 ```
-AcceptIps = [ "172.17.0.1", "192.168.1.0/24" ]
+AcceptIps = [ "172.17.0.1", "192.168.1.0/24", "2000::/64" ]
 ```
 
 #### Secret
