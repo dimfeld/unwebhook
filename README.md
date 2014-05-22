@@ -222,8 +222,32 @@ Commands = [
 
 [[Hook]]
 # Here we have some script that can just process the JSON.
-Url = "/record-issue"
-Commands = [ [ "processevent", "{{ json . }}" ] ]
+Url = "/record-issue/:organization"
+Commands = [ [ "processevent", "{{.urlparams.organization}}", "{{ json . }}" ] ]
+
+[[Hook]]
+# Run multiple commands through a single bash shell.
+# Add commit messages to a repository file in the ~/gitcommits directory.
+# Add the pusher's user ID to a repository file in the ~/gitusers directory
+# and delete duplicates.
+# Note that this isn't really thread-safe. Multiple requests hitting the hook at the
+# same time could cause the files to be out of sync since the operations performed by
+# the shell aren't all atomic.
+Url = "/bash-command"
+PerCommit=true
+AcceptEvents = ["push"]
+Commands = [ 
+   [ "bash", "-c", "cd ~/gitcommits; echo {{.commit.id}} - {{ .commit.message }} >> {{.repository.name}}.txt;" ],
+   [ "bash", "-c", "cd ~/gitusers; echo {{.pusher.name}} >> {{.repository.name}}; sort {{.repository.name}} | uniq >> tmpfile; mv -f tmpfile {{.repository.name}}" ] 
+]
+
+[[Hook]]
+# Same as above, but just call a shell script that does it all.
+Url = "/call-my-script"
+PerCommit=true
+AcceptEvents = ["push"]
+Commands = [ [ "$HOME/bin/record-git.sh", "{{.commit.id}}", "{{.commit.message}}", "{{.repository.name}}",
+   "{{.pusher.name}}" ]
 
 ```
 
