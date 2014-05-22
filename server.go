@@ -82,7 +82,7 @@ func SetupServer(config *Config) (net.Listener, http.Handler) {
 	if len(config.AcceptIps) != 0 {
 		listenFilter := NewListenFilter(listener, WhiteList)
 		for _, a := range config.AcceptIps {
-			listenFilter.FilterAddr[a] = true
+			listenFilter.AddString(a)
 		}
 		listener = listenFilter
 	}
