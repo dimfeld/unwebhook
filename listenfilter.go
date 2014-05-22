@@ -19,12 +19,13 @@ type ListenFilter struct {
 
 func (f *ListenFilter) Accept() (c net.Conn, err error) {
 	for {
-		c, err = f.Accept()
+		c, err = f.Listener.Accept()
 		if err != nil {
 			return
 		}
 
 		addr := c.RemoteAddr().String()
+		addr, _, err = net.SplitHostPort(addr)
 		configured := f.FilterAddr[addr]
 
 		if (configured && f.Behavior == WhiteList) ||
