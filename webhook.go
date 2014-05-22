@@ -165,7 +165,7 @@ func main() {
 	}
 
 	if mainConfigPath == "-" {
-		glog.Infoln("Loading main config from stdin")
+		fmt.Fprintf(os.Stderr, "Loading main config from stdin")
 		goconfig.Load(config, os.Stdin, "UNWEBHOOK")
 	} else {
 		f, err := os.Open(mainConfigPath)
@@ -174,7 +174,7 @@ func main() {
 				mainConfigPath, err)
 			os.Exit(1)
 		}
-		glog.Infoln("Loading main config from", mainConfigPath)
+		fmt.Fprintf(os.Stderr, "Loading main config from %s", mainConfigPath)
 		err = goconfig.Load(config, f, "UNWEBHOOK")
 		f.Close()
 		if err != nil {
