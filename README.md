@@ -3,7 +3,7 @@ unwebhook
 
 Need some custom functionality in response to repository changes, but don't want to go through the effort of writing a webhook? Unwebhook makes it easy, using a simple configuration format to run any command you want in response to an event.
 
-This hasn't been used in anything approaching a production environment. Much of the functionality is known to work, but many options are untested, as noted below.
+This hasn't been used in anything approaching a production environment, but it's pretty simple and light on resources.
 
 ## Usage
 
