@@ -44,8 +44,6 @@ ListenAddress = 127.0.0.1:8080
 
 #### CommandTimeout 
 
-**untested**
-
 The maximum time, in seconds, that any single command is allowed to run. The default value is 5.
 
 ```
@@ -54,8 +52,6 @@ CommandTimeout = 5
 
 #### AcceptIps
 
-**untested**
-
 A list of IP addresses from which to accept requests. Requests from non-allowed IPs are logged and ignored.
 
 If not specified, requests are allowed from any IP address.
@@ -63,6 +59,8 @@ If not specified, requests are allowed from any IP address.
 ```
 AcceptIps = [ "172.17.0.1", "192.168.1.65" ]
 ```
+
+IP prefixes are not yet supported in this command. I may add them in the future.
 
 #### Secret
 
@@ -131,21 +129,15 @@ PerCommit = true
 
 #### AllowEvent 
 
-**untested**
-
-
 A list of events that this hook is allowed to handle. If an event's type is not in this list, it is ignored.
 
 This data is drawn from the `X-Github-Event` HTTP header field for Github events, and from the `object-kind` JSON field for Gitlab events. Gitlab events without an `object-kind` are given the value `push`.
 
 ```
-AllowEvent = [ "push", "issue" ]
+AllowEvent = [ "push", "commit_comment" ]
 ```
 
 #### Secret 
-
-**untested**
-
 
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
 digest will be ignored. Note that Gitlab does not support this feature.
@@ -157,9 +149,6 @@ Secret = "abcd"
 ```
 
 #### Timeout
-
-**untested**
-
 
 Overrides the server-wide Timeout setting. Any one command that runs longer than this value, in seconds, will be killed.
 
