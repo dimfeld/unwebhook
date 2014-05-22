@@ -61,7 +61,7 @@ func hookHandler(w http.ResponseWriter, r *http.Request, params map[string]strin
 		glog.Errorf("Error parinsg JSON for %s: %s", r.URL.Path, err)
 	}
 	event["urlparams"] = params
-	hook.Execute(event)
+	go hook.Execute(event)
 }
 
 func handlerWrapper(handler HookHandler, hook *Hook) httptreemux.HandlerFunc {
