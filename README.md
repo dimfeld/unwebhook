@@ -39,7 +39,7 @@ These variables are read from the main configuration file and determine server-w
 The address and port on which to listen. If none is provided, the default `:80` is used.
 
 ```
-ListenAddress = 127.0.0.1:8080
+ListenAddress = "127.0.0.1:8080"
 ```
 
 #### CommandTimeout 
@@ -52,15 +52,13 @@ CommandTimeout = 5
 
 #### AcceptIps
 
-A list of IP addresses from which to accept requests. Requests from non-allowed IPs are logged and ignored.
+A list of IP addresses and prefixes from which to accept requests. Requests from non-allowed IPs are logged and ignored.
 
 If not specified, requests are allowed from any IP address.
 
 ```
-AcceptIps = [ "172.17.0.1", "192.168.1.65" ]
+AcceptIps = [ "172.17.0.1", "192.168.1.0/24", "2000::/64" ]
 ```
-
-IP prefixes are not yet supported in this command. I may add them in the future.
 
 #### Secret
 
@@ -69,7 +67,7 @@ digest will be ignored. Note that Gitlab does not support this feature.
 
 If specified, this overrides any server-wide secret. If a secret is present in the server-wide configuration, it can be disabled for this hook by setting the hook's secret to "none".
 
-The use of a secret is highly recommended, since it can protect against malicious data being plugged into your commands.
+The use of a secret or AcceptIps is highly recommended, since it can protect against malicious data being plugged into your commands.
 
 #### LogDir
 The directory of the log file. If not given, the default is the current directory. This can also be specified on the command line using the -log_dir command-line option.
@@ -200,13 +198,14 @@ In addition to the templating system, the `Dir`, `Env`, and `Commands` members m
 
 ### Sample Configuration
 
-Some sample configuration files can be found in the `conf` directory of this repository. Below is a simple one.
+Some examples are below. Additional sample configuration files can be found in the `conf` directory of this repository.
 
 ```
 ListenAddress = ":8090"
 CommandTimeout = 4
 LogDir = "/var/log/unwebhook"
 HookPaths = [ "/etc/unwebhook.d" ]
+AcceptIps = [ "192.30.252.0/24" ]
 Secret = "abbadada"
 
 [[Hook]]
@@ -223,7 +222,38 @@ Commands = [
 
 [[Hook]]
 # Here we have some script that can just process the JSON.
-Url = "/record-issue"
-Commands = [ [ "processevent", "{{ json . }}" ] ]
+Url = "/record-issue/:organization"
+Commands = [ [ "processevent", "{{.urlparams.organization}}", "{{ json . }}" ] ]
+
+[[Hook]]
+# Run multiple commands through a single bash shell.
+# Add commit messages to a repository file in the ~/gitcommits directory.
+# Add the pusher's user ID to a repository file in the ~/gitusers directory
+# and delete duplicates.
+# Note that this isn't really thread-safe. Multiple requests hitting the hook at the
+# same time could cause the files to be out of sync since the operations performed by
+# the shell aren't all atomic.
+Url = "/bash-command"
+PerCommit=true
+AcceptEvents = ["push"]
+Commands = [ 
+   [ "bash", "-c", "cd ~/gitcommits; echo {{.commit.id}} - {{ .commit.message }} >> {{.repository.name}}.txt;" ],
+   [ "bash", "-c", "cd ~/gitusers; echo {{.pusher.name}} >> {{.repository.name}}; sort {{.repository.name}} | uniq >> tmpfile; mv -f tmpfile {{.repository.name}}" ] 
+]
+
+[[Hook]]
+# Same as above, but just call a shell script that does it all.
+Url = "/call-my-script"
+PerCommit=true
+AcceptEvents = ["push"]
+Commands = [ [ "$HOME/bin/record-git.sh", "{{.commit.id}}", "{{.commit.message}}", "{{.repository.name}}",
+   "{{.pusher.name}}" ]
 
 ```
+
+## Acknowledgements
+
+* TOML parser from [BurntSushi/toml](https://github.com/BurntSushi/toml)
+* Logging code from my [slightly modified fork](https://github.com/dimfeld/glog) of [Zenoss's heavily modified glog](https://github.com/zenoss/glog)
+
+This project also uses my [httpmuxtree](https://github.com/dimfeld/httptreemux) and [goconfig](https://github.com/dimfeld/goconfig) libraries.
