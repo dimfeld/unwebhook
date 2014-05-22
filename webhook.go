@@ -72,12 +72,13 @@ type Config struct {
 	Hook []*Hook
 }
 
-func (c *Config) MergeHooks(other Hooks) {
+func (c *Config) MergeHooks(other *Hooks) {
 	c.Hook = append(c.Hook, other.Hook...)
 }
 
 func (c *Config) AddHookFile(file string) {
-	h := Hooks{}
+	var err error
+	h := &Hooks{}
 
 	f := os.Stdin
 
@@ -85,7 +86,7 @@ func (c *Config) AddHookFile(file string) {
 		// Change file here so that any error messages will look better.
 		file = "stdin"
 	} else {
-		f, err := os.Open(file)
+		f, err = os.Open(file)
 		if err != nil {
 			glog.Fatalf("Error loading %s: %s", file, err)
 			return
@@ -93,7 +94,9 @@ func (c *Config) AddHookFile(file string) {
 		defer f.Close()
 	}
 
-	_, err := toml.DecodeReader(f, h)
+	glog.Infoln("Reading hooks from", file)
+
+	_, err = toml.DecodeReader(f, h)
 	if err != nil {
 		glog.Fatalf("Error loading %s: %s", file, err)
 		return
@@ -162,6 +165,7 @@ func main() {
 	}
 
 	if mainConfigPath == "-" {
+		glog.Infoln("Loading main config from stdin")
 		goconfig.Load(config, os.Stdin, "UNWEBHOOK")
 	} else {
 		f, err := os.Open(mainConfigPath)
@@ -170,6 +174,7 @@ func main() {
 				mainConfigPath, err)
 			os.Exit(1)
 		}
+		glog.Infoln("Loading main config from", mainConfigPath)
 		err = goconfig.Load(config, f, "UNWEBHOOK")
 		f.Close()
 		if err != nil {
