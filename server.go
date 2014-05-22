@@ -82,6 +82,7 @@ func SetupServer(config *Config) (net.Listener, http.Handler) {
 	if len(config.AcceptIps) != 0 {
 		listenFilter := NewListenFilter(listener, WhiteList)
 		for _, a := range config.AcceptIps {
+			glog.Infoln("Adding IP filter", a)
 			listenFilter.AddString(a)
 		}
 		listener = listenFilter
