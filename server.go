@@ -79,9 +79,9 @@ func SetupServer(config *Config) (net.Listener, http.Handler) {
 		glog.Fatal("Could not listen on", config.ListenAddress)
 	}
 
-	if len(config.AcceptIp) != 0 {
+	if len(config.AcceptIps) != 0 {
 		listenFilter := NewListenFilter(listener, WhiteList)
-		for _, a := range config.AcceptIp {
+		for _, a := range config.AcceptIps {
 			listenFilter.FilterAddr[a] = true
 		}
 		listener = listenFilter

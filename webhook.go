@@ -61,7 +61,7 @@ type Config struct {
 	CommandTimeout int
 
 	// Accept connections from only the given IP addresses.
-	AcceptIp []string
+	AcceptIps []string
 
 	// Default secret required in requests. See the Hook struct for more description.
 	Secret string

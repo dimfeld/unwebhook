@@ -52,7 +52,7 @@ The maximum time, in seconds, that any single command is allowed to run. The def
 CommandTimeout = 5
 ```
 
-#### AcceptIp
+#### AcceptIps
 
 **untested**
 
@@ -61,7 +61,7 @@ A list of IP addresses from which to accept requests. Requests from non-allowed 
 If not specified, requests are allowed from any IP address.
 
 ```
-AcceptIp = [ "172.17.0.1", "192.168.1.65" ]
+AcceptIps = [ "172.17.0.1", "192.168.1.65" ]
 ```
 
 #### Secret
@@ -81,8 +81,6 @@ LogDir = "/var/log/unwebhook"
 ```
 
 #### HookPaths
-
-**untested**
 
 An optional list of files and directories, from which the server will load hooks. These paths are in addition to any hooks defined in the main configuration file or additional command line arguments.
 
