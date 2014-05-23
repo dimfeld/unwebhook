@@ -117,7 +117,7 @@ Env = [ "GONUMPROCS=1", "USER=abc" ]
 ```
 
 #### PerCommit
-If this value is `true`, the hook will be run once for each commit in a push event, with the current commit exposed in the templating system as `.commit`.  A hook comfigured like this will not run anything for an event with no commits.
+If this value is `true`, the hook will be run once for each commit in a push event, with the current commit exposed in the templating system as `.commit`.  A hook configured like this will not run anything for an event with no commits.
 
 If the value is `false`, the hook is run once per event.
 
