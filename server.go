@@ -77,7 +77,7 @@ func SetupServer(config *Config) (net.Listener, http.Handler) {
 
 	listener, err := net.Listen("tcp", config.ListenAddress)
 	if err != nil {
-		glog.Fatal("Could not listen on", config.ListenAddress)
+		glog.Fatalf("Could not listen on %s: %s\n", config.ListenAddress, err)
 	}
 
 	if len(config.AcceptIps) != 0 {
