@@ -100,7 +100,7 @@ Url = "/webhook/:repo/hook"
 
 A path element starting with a colon is a wildcard, which will match on any text in the given path element. In the example above, if the URL configured in GitHub is `/webhook/abc/hook`, then the `repo` variable will be set to `abc`. 
 
-Variables captured in this way are accessible in commands using the syntax `{{ .urlparams.ElementName }}`. In the example here, `{{ .urlparams.abc }}` would be replaced by the text `abc`. See below for more details on the substitution system.
+Variables captured in this way are accessible in commands using the syntax `{{ .urlparams.ElementName }}`. In the example here, `{{ .urlparams.repo }}` would be replaced by the text `abc`. See below for more details on the substitution system.
 
 #### Dir
 The working directory from which to run the command.
@@ -117,7 +117,7 @@ Env = [ "GONUMPROCS=1", "USER=abc" ]
 ```
 
 #### PerCommit
-If this value is `true`, the hook will be run once for each commit in a push event, with the current commit exposed in the templating system as `.commit`.  A hook comfigured like this will not run anything for an event with no commits.
+If this value is `true`, the hook will be run once for each commit in a push event, with the current commit exposed in the templating system as `.commit`.  A hook configured like this will not run anything for an event with no commits.
 
 If the value is `false`, the hook is run once per event.
 
