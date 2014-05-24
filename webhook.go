@@ -145,6 +145,14 @@ func catchSIGINT(f func(), quit bool) {
 	}()
 }
 
+func isDirectory(dirPath string) bool {
+	stat, err := os.Stat(dirPath)
+	if err != nil || !stat.IsDir() {
+		return false
+	}
+	return true
+}
+
 func main() {
 	flag.Parse()
 
@@ -191,6 +199,14 @@ func main() {
 			config.LogDir = "."
 		}
 		flag.Set("log_dir", config.LogDir)
+
+		if !isDirectory(config.LogDir) {
+			err := os.MkdirAll(config.LogDir, 0755)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to create log directory: %s\n", err)
+				fmt.Fprintf(os.Stderr, "Logs will go to $TMPDIR\n", err)
+			}
+		}
 	}
 
 	for _, h := range config.HookPaths {
