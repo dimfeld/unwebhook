@@ -204,7 +204,7 @@ func main() {
 			err := os.MkdirAll(config.LogDir, 0755)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to create log directory: %s\n", err)
-				fmt.Fprintf(os.Stderr, "Logs will go to $TMPDIR\n", err)
+				fmt.Fprintf(os.Stderr, "Logs will go to $TMPDIR\n")
 			}
 		}
 	}
