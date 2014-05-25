@@ -135,6 +135,16 @@ This data is drawn from the `X-Github-Event` HTTP header field for Github events
 AllowEvent = [ "push", "commit_comment" ]
 ```
 
+#### AllowBranches
+
+A list of branches that this hook is allowed to handle.
+
+This data is drawn from the `ref` field, with the `/refs/heads/` prefix stripped off.
+
+```
+AllowBranches = [ "master" ]
+```
+
 #### Secret 
 
 A string used as a key to calculate an HMAC digest of the request body. Requests that don't have a matching
