@@ -7,6 +7,7 @@ import (
 	"github.com/dimfeld/glog"
 	"os"
 	"os/exec"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -72,21 +73,54 @@ func (hook *Hook) CreateTemplates() error {
 // Execute a hook with the given event.
 func (hook *Hook) Execute(e Event) {
 	if len(hook.AllowEvent) != 0 {
-		if eventType, ok := e["type"].(string); ok {
-			allowed := false
-			for _, allowedEvent := range hook.AllowEvent {
-				if allowedEvent == eventType {
-					allowed = true
-					break
-				}
-			}
+		eventType, ok := e["type"].(string)
+		if !ok {
+			glog.Warningf("Received non-string event type %T: %v", eventType, eventType)
+			return
+		}
 
-			if !allowed {
-				glog.Warningf("Hook %s got disallowed event type %s\n", hook.Url, eventType)
-				return
+		allowed := false
+		for _, allowedEvent := range hook.AllowEvent {
+			if allowedEvent == eventType {
+				allowed = true
+				break
 			}
 		}
 
+		if !allowed {
+			glog.Warningf("Hook %s got disallowed event type %s\n", hook.Url, eventType)
+			return
+		}
+	}
+
+	if len(hook.AllowBranches) != 0 {
+		ref, ok := e["ref"].(string)
+		if !ok {
+			glog.Warningf("Received non-string ref type %T: %v", ref, ref)
+			return
+		}
+
+		// Strip off refs/heads, if present.
+		prefixString := "refs/heads/"
+		if strings.HasPrefix(ref, prefixString) {
+			ref = ref[len(prefixString):]
+		}
+
+		allowed := false
+		for _, allowedBranch := range hook.AllowBranches {
+			if ref == allowedBranch {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
+			// This is just an Info, not a warning, since there's no way
+			// to configure Github or Gitlab to only send events for certain
+			// branches.
+			glog.Infof("Hook %s called for ignored branch %s\n", hook.Url, ref)
+			return
+		}
 	}
 
 	if hook.PerCommit {

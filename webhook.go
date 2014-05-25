@@ -29,6 +29,10 @@ type Hook struct {
 	// If empty, all events are accepted.
 	AllowEvent []string
 
+	// Trigger the hook on changes to the following branches. If empty,
+	// the hook does not match on a particular branch.
+	AllowBranches []string
+
 	// Commands to run.
 	Commands [][]string
 
