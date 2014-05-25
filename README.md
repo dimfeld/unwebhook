@@ -254,6 +254,6 @@ Commands = [ [ "$HOME/bin/record-git.sh", "{{.commit.id}}", "{{.commit.message}}
 ## Acknowledgements
 
 * TOML parser from [BurntSushi/toml](https://github.com/BurntSushi/toml)
-* Logging code from my [slightly modified fork](https://github.com/dimfeld/glog) of [Zenoss's heavily modified glog](https://github.com/zenoss/glog)
+* Logging code from [my fork](https://github.com/dimfeld/glog) of [Zenoss's glog fork](https://github.com/zenoss/glog)
 
 This project also uses my [httpmuxtree](https://github.com/dimfeld/httptreemux) and [goconfig](https://github.com/dimfeld/goconfig) libraries.
